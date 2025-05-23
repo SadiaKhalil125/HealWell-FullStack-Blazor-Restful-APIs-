@@ -51,7 +51,7 @@ HealWell+ is a comprehensive healthcare management platform designed to connect 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/healwell.git
+   git clone https://github.com/SadiaKhalil125/HealWell-FullStack-Blazor-Restful-APIs-.git
    ```
 
 2. Configure the database:
