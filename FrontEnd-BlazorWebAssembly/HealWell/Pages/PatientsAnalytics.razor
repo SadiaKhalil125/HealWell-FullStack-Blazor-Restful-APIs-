@@ -1,0 +1,451 @@
+﻿@page "/patient-analytics"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+<Header></Header>
+<div class="admin-dashboard">
+    <!-- Header -->
+    <div class="admin-header">
+        <h1><i class="fas fa-user-injured"></i> Patient Analytics</h1>
+        <div class="admin-actions">
+            <div class="date-range-picker">
+                <i style="color:black !important" class="fas fa-calendar-alt"></i>
+                <select @bind="timeRange">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="365">Last Year</option>
+                    <option value="0">All Time</option>
+                </select>
+            </div>
+            <button class="admin-btn" @onclick="ExportData">
+                <i class="fas fa-file-export"></i> Export
+            </button>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-value">@totalPatients</div>
+            <div class="metric-label">Total Patients</div>
+            <div class="metric-trend @(patientGrowth > 0 ? "up" : patientGrowth < 0 ? "down" : "")">
+                @if (patientGrowth > 0)
+                {
+                    <i class="fas fa-arrow-up"></i> @patientGrowth
+
+                }
+                else if (patientGrowth < 0)
+                {
+                    <i class="fas fa-arrow-down"></i> @Math.Abs(patientGrowth)
+
+                }
+                else
+                {
+                    <i class="fas fa-equals"></i>
+
+                }
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value">@newPatients</div>
+            <div class="metric-label">New Patients</div>
+            <div class="metric-trend @(newPatientGrowth > 0 ? "up" : newPatientGrowth < 0 ? "down" : "")">
+                @if (newPatientGrowth > 0)
+                {
+                    <i class="fas fa-arrow-up"></i> @newPatientGrowth 
+
+                }
+                else if (newPatientGrowth < 0)
+                {
+                    <i class="fas fa-arrow-down"></i> @Math.Abs(newPatientGrowth) 
+                }
+                else
+                {
+                    <i class="fas fa-equals"></i>
+
+                }
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value">@activePatients</div>
+            <div class="metric-label">Active Patients</div>
+            <div class="metric-trend @(activePatientGrowth > 0 ? "up" : activePatientGrowth < 0 ? "down" : "")">
+                @if (activePatientGrowth > 0)
+                {
+                    <i class="fas fa-arrow-up"></i> @activePatientGrowth
+
+                }
+                else if (activePatientGrowth < 0)
+                {
+                    <i class="fas fa-arrow-down"></i> @Math.Abs(activePatientGrowth)
+
+                }
+                else
+                {
+                    <i class="fas fa-equals"></i>
+
+                }
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-value">@avgVisits.ToString("0.1")</div>
+            <div class="metric-label">Avg Visits/Patient</div>
+            <div class="metric-trend @(visitGrowth > 0 ? "up" : visitGrowth < 0 ? "down" : "")">
+                @if (visitGrowth > 0)
+                {
+                    <i class="fas fa-arrow-up"></i> @visitGrowth
+
+                }
+                else if (visitGrowth < 0)
+                {
+                    <i class="fas fa-arrow-down"></i> @Math.Abs(visitGrowth)
+
+                }
+                else
+                {
+                    <i class="fas fa-equals"></i>
+
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+        <div class="chart-card">
+            <h3 style="color:black !important"><i style="color:black !important" class="fas fa-chart-line"></i> Patient Growth</h3>
+            <div class="chart-container">
+                <!-- Replace with actual chart implementation -->
+                <div class="chart-placeholder">
+                    <p>Patient growth chart showing trends over time</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h3 style="color:black !important"><i style="color:black !important" class="fas fa-chart-pie"></i> Age Distribution</h3>
+            <div class="chart-container">
+                <!-- Replace with actual chart implementation -->
+                <div class="chart-placeholder">
+                    <p>Pie chart showing patient age groups</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Demographics -->
+    <div class="demographics-section">
+        <h2 style="color:black !important"><i style="color:black !important" class="fas fa-users"></i> Patient Demographics</h2>
+
+        <div class="demographics-grid">
+            <div class="demographics-card">
+                <h3 style="color:black !important">Gender Distribution</h3>
+                <div class="gender-distribution">
+                    <div class="gender-item">
+                        <div class="gender-icon male">
+                            <i class="fas fa-mars"></i>
+                        </div>
+                        <div class="gender-info">
+                            <span style="color:black !important" class="gender-percent">@malePercent.ToString("0")%</span>
+                            <span class="gender-label">Male</span>
+                        </div>
+                    </div>
+                    <div class="gender-item">
+                        <div class="gender-icon female">
+                            <i class="fas fa-venus"></i>
+                        </div>
+                        <div class="gender-info">
+                            <span style="color:black !important" class="gender-percent">@femalePercent.ToString("0")%</span>
+                            <span class="gender-label">Female</span>
+                        </div>
+                    </div>
+                    <div class="gender-item">
+                        <div class="gender-icon other">
+                            <i class="fas fa-genderless"></i>
+                        </div>
+                        <div class="gender-info">
+                            <span style="color:black !important" class="gender-percent">@otherPercent.ToString("0")%</span>
+                            <span class="gender-label">Other</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demographics-card">
+                <h3 style="color:black !important">Age Groups</h3>
+                <div class="age-groups">
+                    @foreach (var group in ageGroups)
+                    {
+                        <div class="age-group">
+                            <span style="color:black !important" class="age-range">@group.Range</span>
+                            <div class="age-bar-container">
+                                <div class="age-bar" style="width: @group.Percentage%"></div>
+                            </div>
+                            <span style="color:black !important" class="age-percent">@group.Percentage.ToString("0")%</span>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="demographics-card">
+                <h3 style="color:black !important">Insurance Providers</h3>
+                <div class="insurance-providers">
+                    @foreach (var provider in topInsuranceProviders)
+                    {
+                        <div class="provider-item">
+                            <span style="color:black !important" class="provider-name">@provider.Name</span>
+                            <span class="provider-count">@provider.Count patients</span>
+                            <div class="provider-bar-container">
+                                <div class="provider-bar" style="width: @provider.Percentage%"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Activity -->
+    <div class="activity-section">
+        <h2 style="color:black !important"><i style="color:black !important" class="fas fa-calendar-check"></i> Patient Activity</h2>
+
+        <div class="activity-tabs">
+            <button class="@(activityTab == "visits" ? "active" : "")" @onclick="@(() =>(switchTabs("visits")))">
+                Visit Trends
+            </button>
+            <button class="@(activityTab == "conditions" ? "active" : "")" @onclick="@(() => (switchTabs("conditions")))">
+                Common Conditions
+            </button>
+            <button class="@(activityTab == "medications" ? "active" : "")" @onclick="@(() => (switchTabs("medications")))">
+                Top Medications
+            </button>
+        </div>
+
+        <div class="activity-content">
+            @if (activityTab == "visits")
+            {
+                <div class="visit-trends">
+                    <div class="visit-metrics">
+                        <div class="visit-metric">
+                            <span class="visit-value">@totalVisits</span>
+                            <span class="visit-label">Total Visits</span>
+                        </div>
+                        <div class="visit-metric">
+                            <span class="visit-value">@avgVisitDuration mins</span>
+                            <span class="visit-label">Avg. Duration</span>
+                        </div>
+                        <div class="visit-metric">
+                            <span class="visit-value">@noShowRate.ToString("0")%</span>
+                            <span class="visit-label">No-Show Rate</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <!-- Replace with actual chart implementation -->
+                        <div class="chart-placeholder">
+                            <p>Visit trends chart showing appointments over time</p>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (activityTab == "conditions")
+            {
+                <div class="conditions-list">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Condition</th>
+                                <th>Patients Affected</th>
+                                <th>% of Population</th>
+                                <th>Avg. Visits</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var condition in commonConditions)
+                            {
+                                <tr>
+                                    <td>@condition.Name</td>
+                                    <td>@condition.PatientCount</td>
+                                    <td>@condition.Percentage.ToString("0.0")%</td>
+                                    <td>@condition.AvgVisits.ToString("0.1")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else if (activityTab == "medications")
+            {
+                <div class="medications-grid">
+                    @foreach (var med in topMedications)
+                    {
+                        <div class="medication-card">
+                            <div class="medication-name">@med.Name</div>
+                            <div class="medication-stats">
+                                <span class="medication-patients">@med.PatientCount patients</span>
+                                <span class="medication-percent">@med.Percentage.ToString("0")%</span>
+                            </div>
+                            <div class="medication-class">@med.Class</div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Patient Locations -->
+    <div class="locations-section">
+        <h2 style="color:black !important"><i style="color:black !important" class="fas fa-map-marker-alt"></i> Patient Locations</h2>
+
+        <div class="locations-container">
+            <div class="locations-map">
+                <!-- Replace with actual map implementation -->
+                <div class="map-placeholder">
+                    <i class="fas fa-map"></i>
+                    <p>Geographic distribution of patients</p>
+                </div>
+            </div>
+
+            <div class="locations-list">
+                <h3 style="color:black !important">Top ZIP Codes</h3>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ZIP Code</th>
+                            <th>Patients</th>
+                            <th>% of Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var location in topLocations)
+                        {
+                            <tr>
+                                <td style="color:black !important">@location.ZipCode</td>
+                                <td style="color:black !important">@location.PatientCount</td>
+                                <td style="color:black !important">@location.Percentage.ToString("0.0")%</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<Footer></Footer>
+
+
+@code {
+    // Time range filter
+    private string timeRange = "30";
+
+    // Patient metrics
+    private int totalPatients = 1250;
+    private int newPatients = 42;
+    private int activePatients = 876;
+    private double avgVisits = 2.8;
+    private int patientGrowth = 12;
+    private int newPatientGrowth = 8;
+    private int activePatientGrowth = 5;
+    private int visitGrowth = 3;
+
+    // Demographics
+    private int malePercent = 48;
+    private int femalePercent = 50;
+    private int otherPercent = 2;
+
+    private List<AgeGroup> ageGroups = new List<AgeGroup> {
+        new AgeGroup { Range = "0-18", Percentage = 15 },
+        new AgeGroup { Range = "19-35", Percentage = 28 },
+        new AgeGroup { Range = "36-50", Percentage = 32 },
+        new AgeGroup { Range = "51-65", Percentage = 18 },
+        new AgeGroup { Range = "65+", Percentage = 7 }
+    };
+
+    private List<InsuranceProvider> topInsuranceProviders = new List<InsuranceProvider> {
+        new InsuranceProvider { Name = "Medicare", Count = 420, Percentage = 33.6 },
+        new InsuranceProvider { Name = "Blue Cross", Count = 380, Percentage = 30.4 },
+        new InsuranceProvider { Name = "Aetna", Count = 225, Percentage = 18.0 },
+        new InsuranceProvider { Name = "Self-Pay", Count = 125, Percentage = 10.0 },
+        new InsuranceProvider { Name = "Other", Count = 100, Percentage = 8.0 }
+    };
+
+    // Patient activity
+    private string activityTab = "visits";
+    private int totalVisits = 342;
+    private int avgVisitDuration = 25;
+    private int noShowRate = 8;
+
+    private List<MedicalCondition> commonConditions = new List<MedicalCondition> {
+        new MedicalCondition { Name = "Hypertension", PatientCount = 320, Percentage = 25.6, AvgVisits = 3.2 },
+        new MedicalCondition { Name = "Diabetes", PatientCount = 215, Percentage = 17.2, AvgVisits = 4.1 },
+        new MedicalCondition { Name = "Hyperlipidemia", PatientCount = 180, Percentage = 14.4, AvgVisits = 2.8 },
+        new MedicalCondition { Name = "Anxiety", PatientCount = 145, Percentage = 11.6, AvgVisits = 3.5 },
+        new MedicalCondition { Name = "Depression", PatientCount = 132, Percentage = 10.6, AvgVisits = 3.8 }
+    };
+
+    private List<Medication> topMedications = new List<Medication> {
+        new Medication { Name = "Lisinopril", PatientCount = 185, Percentage = 14.8, Class = "ACE Inhibitor" },
+        new Medication { Name = "Atorvastatin", PatientCount = 172, Percentage = 13.8, Class = "Statin" },
+        new Medication { Name = "Metformin", PatientCount = 158, Percentage = 12.6, Class = "Antidiabetic" },
+        new Medication { Name = "Levothyroxine", PatientCount = 142, Percentage = 11.4, Class = "Thyroid" },
+        new Medication { Name = "Sertraline", PatientCount = 128, Percentage = 10.2, Class = "Antidepressant" }
+    };
+
+    // Patient locations
+    private List<PatientLocation> topLocations = new List<PatientLocation> {
+        new PatientLocation { ZipCode = "90210", PatientCount = 125, Percentage = 10.0 },
+        new PatientLocation { ZipCode = "90211", PatientCount = 98, Percentage = 7.8 },
+        new PatientLocation { ZipCode = "90212", PatientCount = 87, Percentage = 7.0 },
+        new PatientLocation { ZipCode = "90213", PatientCount = 76, Percentage = 6.1 },
+        new PatientLocation { ZipCode = "90214", PatientCount = 65, Percentage = 5.2 }
+    };
+    public async Task switchTabs(string tab)
+    {
+        activityTab = tab;
+    }
+    private void ExportData()
+    {
+        // In a real app, this would generate and download a report
+        Console.WriteLine("Exporting patient analytics data...");
+    }
+
+    // Data models
+    public class AgeGroup
+    {
+        public string Range { get; set; }
+        public int Percentage { get; set; }
+    }
+
+    public class InsuranceProvider
+    {
+        public string Name { get; set; }
+        public int Count { get; set; }
+        public double Percentage { get; set; }
+    }
+
+    public class MedicalCondition
+    {
+        public string Name { get; set; }
+        public int PatientCount { get; set; }
+        public double Percentage { get; set; }
+        public double AvgVisits { get; set; }
+    }
+
+    public class Medication
+    {
+        public string Name { get; set; }
+        public int PatientCount { get; set; }
+        public double Percentage { get; set; }
+        public string Class { get; set; }
+    }
+
+    public class PatientLocation
+    {
+        public string ZipCode { get; set; }
+        public int PatientCount { get; set; }
+        public double Percentage { get; set; }
+    }
+}

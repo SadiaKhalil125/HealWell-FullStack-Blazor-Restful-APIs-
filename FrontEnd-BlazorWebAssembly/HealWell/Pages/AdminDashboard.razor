@@ -1,0 +1,540 @@
+﻿@page "/admin"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Navigation
+@using HealWell.Services
+@inject HttpClient Http
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Net.Http.Headers
+@using HealWell.Models
+@inject DoctorService doctorservice
+@inject PatientService patientservice
+@inject CheckoutService checkoutservice
+@inject AppointmentService appointmentservice
+<Header></Header>
+<div class="admin-dashboard">
+    <!-- Admin Header -->
+    <div class="admin-header">
+        <h1 id="tw-1"><i class="fas fa-user-shield"></i> Admin Dashboard</h1>
+        <div class="admin-actions">
+            <button class="admin-btn primary" @onclick="@(()=>Navigation.NavigateTo("/doctor/register"))">
+                <i class="fas fa-user-plus"></i> Add Doctor
+            </button>
+            <button class="admin-btn primary" @onclick="ShowAddDoctorModal">
+                <i class="fas fa-user-plus"></i> Edit Doctor
+            </button>
+            <button class="admin-btn primary" >
+                <a style="text-decoration:none; color:white;" href="javascript:Blazor.navigateTo('/patient-analytics')">  <i class="fas fa-user"></i> Patients Analytics</a>
+            </button>
+
+            <button class="admin-btn" @onclick="RefreshData">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Tabs -->
+    <div class="admin-tabs">
+        <button class="@(activeTab == "doctors" ? "active" : "")" @onclick="@(() => SwitchTab("doctors"))">
+            <i class="fas fa-user-md"></i> Doctors
+        </button>
+        <button class="@(activeTab == "analytics" ? "active" : "")" @onclick="@(() => SwitchTab("analytics"))">
+            <i class="fas fa-chart-bar"></i> Analytics
+        </button>
+        <button class="@(activeTab == "appointments" ? "active" : "")" @onclick="@(() => SwitchTab("appointments"))">
+            <i class="fas fa-calendar-alt"></i> Appointments
+        </button>
+        <button class="@(activeTab == "settings" ? "active" : "")" @onclick="@(() => SwitchTab("settings"))">
+            <i class="fas fa-cog"></i> Settings
+        </button>
+
+    </div>
+
+    <!-- Doctors Management Tab -->
+    <div class="admin-tab-content @(activeTab == "doctors" ? "active" : "")">
+        <div class="admin-table-container">
+            <div class="admin-table-header">
+                <h2 style="color:black !important">Manage Doctors</h2>
+                <div class="admin-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search doctors..." @bind="doctorSearchTerm" />
+                </div>
+            </div>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Specialty</th>
+                        <th>Status</th>
+                        <th>Appointments</th>
+                        <th>Rating</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var doctor in FilteredDoctors)
+                    {
+                        <tr>
+                            <td style="color:black !important">@doctor.Id</td>
+                            <td class="doctor-cell">
+                                <img src="@doctor.ImageUrl" alt="@doctor.Name" />
+                                <span style="color:black !important">@doctor.Name</span>
+                            </td>
+                            <td style="color:black !important">@doctor.Specialty</td>
+                            <td>
+                                <span class="status-badge @(doctor.IsActive ? "active" : "inactive")">
+                                    @(doctor.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td style="color:black !important" >@doctor.AppointmentCount</td>
+                            <td>
+                                <div class="doctor-rating">
+                                    @for (int i = 0; i < 5; i++)
+                                    {
+                                         @* <i class="fas @(i < Math.Floor(doctor.Rating) ? "fa-star" :   *@
+                                         @* (i == Math.Floor(doctor.Rating) && doctor.Rating % 1 > 0 ? "fa-star-half-alt" : "fa-star-o")">/i>  *@
+                                    }
+                                    <span>@doctor.Rating.ToString("0.1")</span>
+                                </div>
+                            </td>
+                            <td class=""><div style="display:flex; align-content:center; padding:2px;">
+                                    <button class="icon-btn" @onclick="() => EditDoctor(doctor.Id)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="icon-btn danger" @onclick="() => ToggleDoctorStatus(doctor.Id)">
+                                        <i class="fas @(doctor.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                                    </button>
+                                    <button class="icon-btn" @onclick="() => ViewDoctor(doctor.Id)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="admin-pagination">
+                <button @onclick="PreviousPage" :disabled="currentPage == 1">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <span>Page @currentPage of @totalPages</span>
+                <button @onclick="NextPage" :disabled="currentPage == totalPages">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div class="admin-tab-content @(activeTab == "analytics" ? "active" : "")">
+        <div class="analytics-grid">
+            <!-- Key Metrics -->
+            <div class="analytics-card wide">
+                <h2>Key Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-value">@totalDoctors</div>
+                        <div class="metric-label">Total Doctors</div>
+                        <div class="metric-trend up">
+                            <i class="fas fa-arrow-up"></i> 12%
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">@totalAppointments</div>
+                        <div class="metric-label">Appointments (30d)</div>
+                        <div class="metric-trend up">
+                            <i class="fas fa-arrow-up"></i> 5%
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">@averageRating.ToString("0.1")</div>
+                        <div class="metric-label">Avg. Rating</div>
+                        <div class="metric-trend">
+                            <i class="fas fa-equals"></i> 0%
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value">@revenueLastMonth.ToString("C")</div>
+                        <div class="metric-label">Revenue (30d)</div>
+                        <div class="metric-trend down">
+                            <i class="fas fa-arrow-down"></i> 3%
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Chart -->
+            <div class="analytics-card">
+                <h2>Appointments</h2>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Appointments over time chart</p>
+                </div>
+            </div>
+
+            <!-- Top Doctors -->
+            <div class="analytics-card">
+                <h2>Top Performing Doctors</h2>
+                <div class="top-doctors">
+                    @foreach (var doctor in topDoctors)
+                    {
+                        <div class="top-doctor">
+                            <div class="doctor-info">
+                                <img src="@doctor.ImageUrl" alt="@doctor.Name" />
+                                <div>
+                                    <h4>@doctor.Name</h4>
+                                    <p>@doctor.Specialty</p>
+                                </div>
+                            </div>
+                            <div class="doctor-stats">
+                                <span class="rating">@doctor.Rating.ToString("0.1")</span>
+                                <span class="appointments">@doctor.AppointmentCount appts</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Specialty Distribution -->
+            <div class="analytics-card">
+                <h2>Specialty Distribution</h2>
+                <div class="chart-placeholder">
+                    <i class="fas fa-chart-pie"></i>
+                    <p>Specialties pie chart</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Doctor Modal -->
+    @if (showDoctorModal)
+    {
+        <div class="admin-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>"Edit Doctor"</h3>
+                    <button class="close-btn" @onclick="CloseModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <EditForm Model="@doctor" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="form-group">
+                        <label>Name</label>
+                        <InputText class="form-control" @bind-Value="doctor.Name" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Specialty</label>
+                        <InputText class="form-control" @bind-Value="doctor.Specialty" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <InputText class="form-control" @bind-Value="doctor.Email" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Hospital</label>
+                        <InputText class="form-control" @bind-Value="doctor.Hospital" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Bio</label>
+                        <InputTextArea class="form-control" @bind-Value="doctor.Bio" />
+                    </div>
+                    <div class="form-group">
+                        <label>Experience</label>
+                        <InputTextArea class="form-control" @bind-Value="doctor.Experience" />
+                    </div>
+                    <div class="form-group">
+                        <label>Education (comma separated)</label>
+                        <InputText class="form-control" @bind-Value="educationInput" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Available Days (comma separated)</label>
+                        <InputText class="form-control" @bind-Value="availableDaysInput" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Available DateTimes (comma separated, e.g. 2025-05-12T14:00)</label>
+                        <InputText class="form-control" @bind-Value="availableDateTimesInput" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Department ID</label>
+                        <InputNumber class="form-control" @bind-Value="doctor.DepartmentId" />
+                    </div>
+
+                    <div class="form-check">
+                        <InputCheckbox class="form-check-input" @bind-Value="doctor.IsActive" />
+                        <label class="form-check-label">Active</label>
+                    </div>
+
+                    <div class="form-group mt-3">
+                        <label>Upload Image</label>
+                        <InputFile OnChange="HandleFileSelected" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary mt-3">Register</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>
+<Footer></Footer>
+@code {
+    private DoctorRegisterDto doctor = new();
+    private string educationInput;
+    private string availableDaysInput;
+    private string availableDateTimesInput;
+    private IBrowserFile imageFile;
+
+    private string activeTab = "doctors";
+    private bool showDoctorModal = false;
+    private bool editingDoctor = true;
+    private string doctorSearchTerm = "";
+    private int currentPage = 1;
+    private int pageSize = 10;
+
+    // Dummy data - replace with API calls
+    private List<Doctor> doctors = new List<Doctor>();
+    private List<string> specialties = new List<string> { 
+        "Cardiology", "Neurology", "Pediatrics", "Dermatology", "Orthopedics" 
+    };
+
+   
+
+    // Analytics data
+    private int totalDoctors = 24;
+    private int totalAppointments = 342;
+    private double averageRating = 4.3;
+    private decimal revenueLastMonth = 125430.00m;
+    private List<Doctor> topDoctors = new List<Doctor>();
+
+    protected override void OnInitialized()
+    {
+        LoadDoctors();
+        LoadAnalyticsData();
+    }
+
+    private async void LoadDoctors()
+    {
+        doctors = await doctorservice.GetAllAsync(); 
+        foreach (var doc in doctors)
+        {
+            doc.ImageUrl = await doctorservice.GetImageUrl(doc.ImageUrl);
+        }
+        
+    }
+
+    private void LoadAnalyticsData()
+    {
+        // Replace with API call
+        topDoctors = doctors.OrderByDescending(d => d.Rating)
+                           .Take(3)
+                           .ToList();
+    }
+
+    private List<Doctor> FilteredDoctors => doctors
+        .Where(d => string.IsNullOrEmpty(doctorSearchTerm) || 
+                    d.Name.Contains(doctorSearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    d.Specialty.Contains(doctorSearchTerm, StringComparison.OrdinalIgnoreCase))
+        .Skip((currentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int totalPages => (int)Math.Ceiling((double)doctors.Count / pageSize);
+
+    private void SwitchTab(string tabName)
+    {
+        activeTab = tabName;
+    }
+
+    private void ShowAddDoctorModal()
+    {
+        
+        editingDoctor = false;
+        showDoctorModal = true;
+    }
+
+
+    private void EditDoctor(int id)
+    {
+        var doctor = doctors.FirstOrDefault(d => d.Id == id);
+        if (doctor != null)
+        {
+            // doctorForm = new DoctorForm
+            // {
+            //     Id = doctor.Id,
+            //     Name = doctor.Name,
+            //     Specialty = doctor.Specialty,
+            //     Hospital = doctor.Hospital,
+            //     ImageUrl = doctor.ImageUrl,
+            //     Bio = doctor.Bio,
+            //     IsActive = doctor.IsActive,
+            //     Add other fields as needed
+            // };
+            editingDoctor = true;
+            showDoctorModal = true;
+        }
+    }
+
+    private void ToggleDoctorStatus(int id)
+    {
+        var doctor = doctors.FirstOrDefault(d => d.Id == id);
+        if (doctor != null)
+        {
+            doctor.IsActive = !doctor.IsActive;
+        }
+    }
+
+    private void ViewDoctor(int id)
+    {
+        Navigation.NavigateTo($"/doctor/{id}");
+    }
+
+    // private async void SaveDoctor()
+    // {
+    //     if (editingDoctor)
+    //     {
+    //         Update existing doctor
+    //         var doctor = doctors.FirstOrDefault(d => d.Id == doctorForm.Id);
+    //         if (doctor != null)
+    //         {
+    //             doctor.Name = doctorForm.Name;
+    //             doctor.Specialty = doctorForm.Specialty;
+    //             doctor.Hospital = doctorForm.Hospital;
+    //             doctor.ImageUrl = doctorForm.ImageUrl;
+    //             doctor.Bio = doctorForm.Bio;
+    //             doctor.IsActive = doctorForm.IsActive;
+    //         }
+    //         await doctorservice.UpdateDoctor(doctor);
+    //     }
+    //     else
+    //     {
+    //         Add new doctor
+    //         var newDoctor = new Doctor
+    //         {
+    //             Id = doctors.Max(d => d.Id) + 1,
+    //             Name = doctorForm.Name,
+    //             Specialty = doctorForm.Specialty,
+    //             Hospital = doctorForm.Hospital,
+    //             ImageUrl = doctorForm.ImageUrl,
+    //             Bio = doctorForm.Bio,
+    //             IsActive = doctorForm.IsActive,
+    //             AppointmentCount = 0,
+    //             Rating = 0
+    //         };
+    //         doctors.Add(newDoctor);
+            
+    //     }
+        
+    //     CloseModal();
+    // }
+    
+    private void CloseModal()
+    {
+        showDoctorModal = false;
+    }
+    
+    private void RefreshData()
+    {
+        LoadDoctors();
+        LoadAnalyticsData();
+    }
+    
+    private void PreviousPage()
+    {
+        if (currentPage > 1) currentPage--;
+    }
+    
+    private void NextPage()
+    {
+        if (currentPage < totalPages) currentPage++;
+    }
+    
+    private void HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        imageFile = e.File;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        // Parse comma-separated inputs to lists
+        doctor.Education = educationInput?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim()).ToList() ?? new List<string>();
+
+        doctor.AvailableDays = availableDaysInput?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x => x.Trim()).ToList() ?? new List<string>();
+
+        doctor.AvailableDateTimes = availableDateTimesInput?.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(x =>
+            {
+                bool success = DateTime.TryParse(x.Trim(), out var dt);
+                return success ? (DateTime?)dt : null;
+            })
+            .Where(x => x.HasValue)
+            .Select(x => x.Value)
+            .ToList() ?? new List<DateTime>();
+
+        var formData = new MultipartFormDataContent();
+
+        // Add simple properties
+        formData.Add(new StringContent(doctor.Name ?? ""), "Name");
+        formData.Add(new StringContent(doctor.Specialty ?? ""), "Specialty");
+        formData.Add(new StringContent(doctor.Email ?? ""), "Email");
+        formData.Add(new StringContent(doctor.Hospital ?? ""), "Hospital");
+        formData.Add(new StringContent(doctor.Bio ?? ""), "Bio");
+        formData.Add(new StringContent(doctor.Experience ?? ""), "Experience");
+        formData.Add(new StringContent(doctor.DepartmentId.ToString()), "DepartmentId");
+        formData.Add(new StringContent(doctor.IsActive.ToString()), "IsActive");
+
+        // Add each Education entry separately
+        foreach (var edu in doctor.Education)
+        {
+            formData.Add(new StringContent(edu), "Education");
+        }
+
+        // Add each AvailableDay separately
+        foreach (var day in doctor.AvailableDays)
+        {
+            formData.Add(new StringContent(day), "AvailableDays");
+        }
+
+        // Add each AvailableDateTime separately (ISO 8601 format)
+        foreach (var dt in doctor.AvailableDateTimes)
+        {
+            formData.Add(new StringContent(dt.ToString("o")), "AvailableDateTimes");
+        }
+
+        // Add image file if selected
+        if (imageFile != null)
+        {
+            var fileContent = new StreamContent(imageFile.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(imageFile.ContentType);
+            formData.Add(fileContent, "image", imageFile.Name);
+        }
+
+        var response = await Http.PostAsync("https://localhost:7047/api/Doctors/edit", formData);
+
+        if (response.IsSuccessStatusCode)
+        {
+            Console.WriteLine("Doctor updated successfully!");
+            // Optionally clear form or show success UI
+        }
+        else
+        {
+            var errorMsg = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Failed to update doctor: {errorMsg}");
+            // Optionally display error message on UI
+        }
+    }
+
+}

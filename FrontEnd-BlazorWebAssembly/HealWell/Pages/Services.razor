@@ -1,0 +1,212 @@
+﻿@page "/services"
+@inject NavigationManager Navigation
+<Header></Header>
+<section class="services-hero">
+    <div class="container">
+        <h1 class="wow fadeInUp">Our Healthcare Services</h1>
+        <p class="wow fadeInUp" data-wow-delay="0.2s">Comprehensive medical care designed for your needs</p>
+    </div>
+</section>
+
+<section class="services-section">
+    <div class="container">
+        <div class="section-header wow fadeInUp">
+            <h2>Specialized Services</h2>
+            <p>Expert care across all major medical disciplines</p>
+        </div>
+
+        <div class="row">
+            @foreach (var service in services)
+            {
+                <div class="col-lg-4 col-md-6 mb-4 wow fadeInUp">
+                    <div class="service-card" @onclick="() => NavigateToService(service.Id)">
+                        <div class="service-icon">
+                            <i class="@service.Icon"></i>
+                        </div>
+                        <div class="service-content">
+                            <h3>@service.Name</h3>
+                            <p>@service.Description</p>
+                            <div class="service-link">
+                                Learn more <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="emergency-section">
+    <div class="container">
+        <div class="emergency-banner wow fadeIn">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2>24/7 Emergency Care</h2>
+                    <p>Immediate medical attention when you need it most</p>
+                </div>
+                <div class="col-md-4 text-md-right">
+                    <a href="tel:+18005551234" class="emergency-btn">
+                        <i class="fas fa-phone-alt"></i> Call Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="how-it-works">
+    <div class="container">
+        <div class="section-header wow fadeInUp">
+            <h2>How Our Services Work</h2>
+            <p>Simple steps to better health</p>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 wow fadeInUp">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3 style="color: #0d47a1 !important">Schedule Appointment</h3>
+                    <p>Book online or call our reception for an in-person or virtual consultation</p>
+                </div>
+            </div>
+            <div class="col-md-4 wow fadeInUp" data-wow-delay="0.2s">
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3 style="color: #0d47a1 !important">Consult with Specialist</h3>
+                    <p>Meet with our board-certified physicians for diagnosis and treatment</p>
+                </div>
+            </div>
+            <div class="col-md-4 wow fadeInUp" data-wow-delay="0.4s">
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3 style="color: #0d47a1 !important">Receive Ongoing Care</h3>
+                    <p>Get follow-up care and personalized treatment plans</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="testimonials-section">
+    <div class="container">
+        <div class="section-header wow fadeInUp">
+            <h2>Patient Experiences</h2>
+            <p>What our patients say about our services</p>
+        </div>
+
+        <div class="row">
+            @foreach (var testimonial in testimonials)
+            {
+                <div class="col-md-4 wow fadeInUp">
+                    <div class="testimonial-card">
+                        <div class="quote-icon">
+                            <i class="fas fa-quote-left"></i>
+                        </div>
+                        <p>@testimonial.Comment</p>
+                        <div class="patient-info">
+                            <img src="@testimonial.ImageUrl" alt="@testimonial.Name" />
+                            <div>
+                                <h4>@testimonial.Name</h4>
+                                <p>@testimonial.ServiceUsed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+<Footer></Footer>
+@code {
+    private List<Service> services = new();
+    private List<Testimonial> testimonials = new();
+
+    protected override void OnInitialized()
+    {
+        // Load services data
+        services = new List<Service>
+        {
+            new Service {
+                Id = 1,
+                Name = "Cardiology",
+                Description = "Comprehensive heart care including diagnostics, treatment and prevention",
+                Icon = "fas fa-heartbeat"
+            },
+            new Service {
+                Id = 2,
+                Name = "Neurology",
+                Description = "Specialized care for brain and nervous system disorders",
+                Icon = "fas fa-brain"
+            },
+            new Service {
+                Id = 3,
+                Name = "Orthopedics",
+                Description = "Treatment for musculoskeletal injuries and conditions",
+                Icon = "fas fa-bone"
+            },
+            new Service {
+                Id = 4,
+                Name = "Pediatrics",
+                Description = "Specialized healthcare for infants, children and adolescents",
+                Icon = "fas fa-baby"
+            },
+            new Service {
+                Id = 5,
+                Name = "Dermatology",
+                Description = "Diagnosis and treatment of skin conditions and diseases",
+                Icon = "fas fa-allergies"
+            },
+            new Service {
+                Id = 6,
+                Name = "Telemedicine",
+                Description = "Virtual consultations with our healthcare professionals",
+                Icon = "fas fa-video"
+            }
+        };
+
+        // Load testimonials data
+        testimonials = new List<Testimonial>
+        {
+            new Testimonial {
+                Name = "Sarah Johnson",
+                Comment = "The cardiology team saved my life after my heart attack. Their follow-up care has been exceptional.",
+                ServiceUsed = "Cardiology Patient",
+                ImageUrl = "https://randomuser.me/api/portraits/women/44.jpg"
+            },
+            new Testimonial {
+                Name = "Michael Chen",
+                Comment = "The neurologist accurately diagnosed my condition when others couldn't. I'm finally getting proper treatment.",
+                ServiceUsed = "Neurology Patient",
+                ImageUrl = "https://randomuser.me/api/portraits/men/44.jpg"
+            },
+            new Testimonial {
+                Name = "Emily Rodriguez",
+                Comment = "My kids actually look forward to their pediatric visits. The doctors are amazing with children.",
+                ServiceUsed = "Pediatrics Parent",
+                ImageUrl = "https://randomuser.me/api/portraits/women/12.jpg"
+            }
+        };
+    }
+
+    private void NavigateToService(int serviceId)
+    {
+        Navigation.NavigateTo($"/service/{serviceId}");
+    }
+
+    public class Service
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string Icon { get; set; }
+    }
+
+    public class Testimonial
+    {
+        public string Name { get; set; }
+        public string Comment { get; set; }
+        public string ServiceUsed { get; set; }
+        public string ImageUrl { get; set; }
+    }
+}

@@ -1,0 +1,193 @@
+﻿@page "/chat-consultation"
+@inject NavigationManager Navigation
+@implements IDisposable
+<Header></Header>
+<div class="chat-consultation-container">
+    <div class="chat-header">
+        <h2><i class="fas fa-comments-medical"></i> Live Doctor Consultation</h2>
+        <div class="doctor-status">
+            <span class="status-badge online"></span>
+            <span>Dr. @currentDoctor?.Name is online</span>
+        </div>
+    </div>
+
+    <div class="chat-body" @ref="chatContainer">
+        @foreach (var message in messages)
+        {
+            @if (message.IsDoctor)
+            {
+                <div class="message doctor-message">
+                    <div class="message-avatar">
+                        <img src="@currentDoctor?.ImageUrl" alt="Dr. @currentDoctor?.Name" />
+                    </div>
+                    <div class="message-content" >
+                        <div class="message-meta">
+                            <strong>Dr. @currentDoctor?.Name</strong>
+                            <small>@message.Timestamp.ToString("h:mm tt")</small>
+                        </div>
+                        <div class="message-text">@message.Text</div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="message patient-message">
+                    <div class="message-content">
+                        <div class="message-meta" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <strong>You</strong>
+                            </div>
+                            <div style="text-align: right;">
+                                <small>@message.Timestamp.ToString("h:mm tt")</small>
+                            </div>
+                        </div>
+                        <div class="message-text">@message.Text</div>
+                    </div>
+                </div>
+
+            }
+        }
+    </div>
+
+    <div class="chat-footer">
+        <div class="message-input">
+            <input type="text"
+                   @bind="newMessage"
+                   @bind:event="oninput"
+                   placeholder="Type your message..."
+                   @onkeypress="HandleKeyPress" />
+            <button @onclick="SendMessage" class="send-button">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+        <div class="chat-actions">
+            <button class="action-btn" @onclick="AttachFile">
+                <i class="fas fa-paperclip"></i> Attach
+            </button>
+            <button class="action-btn" @onclick="EndConsultation">
+                <i class="fas fa-phone-slash"></i> End Consultation
+            </button>
+        </div>
+    </div>
+</div>
+<Footer></Footer>
+<script src="js/site.js"></script>
+@code {
+    private ElementReference chatContainer;
+    private string newMessage = string.Empty;
+    private List<ChatMessage> messages = new();
+    private Doctor? currentDoctor;
+    private Timer? messageTimer;
+    private bool isTyping = false;
+
+    protected override void OnInitialized()
+    {
+        // Load doctor data (in a real app, this would come from an API)
+        currentDoctor = new Doctor
+            {
+                Id = 1,
+                Name = "Sarah Johnson",
+                Specialty = "General Physician",
+                ImageUrl = "images/g1.jpg"
+            };
+
+        // Simulate initial doctor message
+        messages.Add(new ChatMessage
+            {
+                Text = "Hello! I'm Dr. Johnson. How can I help you today?",
+                IsDoctor = true,
+                Timestamp = DateTime.Now
+            });
+
+        // Simulate doctor typing indicator (in a real app, this would be a SignalR event)
+        messageTimer = new Timer(_ =>
+        {
+            isTyping = !isTyping;
+            InvokeAsync(StateHasChanged);
+        }, null, 3000, 3000);
+    }
+
+    private async Task SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(newMessage))
+        {
+            // Add patient message
+            messages.Add(new ChatMessage
+                {
+                    Text = newMessage,
+                    IsDoctor = false,
+                    Timestamp = DateTime.Now
+                });
+
+            newMessage = string.Empty;
+            // await ScrollToBottom();
+
+            // Simulate doctor response (in a real app, this would be a SignalR call)
+            await Task.Delay(1000);
+            messages.Add(new ChatMessage
+                {
+                    Text = GetRandomDoctorResponse(),
+                    IsDoctor = true,
+                    Timestamp = DateTime.Now
+                });
+
+            // await ScrollToBottom();
+        }
+    }
+
+    // private async Task ScrollToBottom()
+    // {
+    //     await JSRuntime.InvokeVoidAsync("scrollToBottom", chatContainer);
+    // }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessage();
+        }
+    }
+
+    private void AttachFile()
+    {
+        // In a real app, implement file attachment logic
+    }
+
+    private void EndConsultation()
+    {
+        Navigation.NavigateTo("/consultation-complete");
+    }
+
+    private string GetRandomDoctorResponse()
+    {
+        var responses = new List<string>
+        {
+            "I understand your concern. Let me look into this further.",
+            "Based on your symptoms, I recommend...",
+            "Have you experienced this before?",
+            "That's a common issue. Here's what we can do...",
+            "I'm going to prescribe some medication for this."
+        };
+        return responses[new Random().Next(responses.Count)];
+    }
+
+    public void Dispose()
+    {
+        messageTimer?.Dispose();
+    }
+
+    private class ChatMessage
+    {
+        public string Text { get; set; } = string.Empty;
+        public bool IsDoctor { get; set; }
+        public DateTime Timestamp { get; set; }
+    }
+
+    private class Doctor
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+    }
+}
