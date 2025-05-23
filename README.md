@@ -61,6 +61,7 @@ HealWell+ is a comprehensive healthcare management platform designed to connect 
      dotnet ef database update
      ```
 **Overview**
+(Some pages for the frontend visuals)
 ![Screenshot (1054)](https://github.com/user-attachments/assets/7a213998-bf2c-4801-b504-2a888f298b8a)
 
 ![Screenshot (1055)](https://github.com/user-attachments/assets/05d9585a-e1d4-4bd0-b43d-abf1612a670f)
